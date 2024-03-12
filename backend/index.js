@@ -9,6 +9,9 @@ const port = process.env.PORT;
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+const adminRoute = require("./routes/adminroutes");
+app.use('/admin',adminRoute);
+
 app.listen(port, async () => {
   await client.connect();
   console.log(`Backend is listening to port ${port}`);
