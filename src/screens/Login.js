@@ -1,94 +1,135 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TextInput,
+  Pressable,
+  Image,
+} from "react-native";
+import { TouchableOpacity } from "react-native";
 import axios from "axios";
+import * as WebBrowser from "expo-web-browser";
+import { Zocial } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
+import { useWarmUpBrowser } from "../hooks/useWarmUpBrowser";
+import { useOAuth } from "@clerk/clerk-expo";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Login() {
-  const [emailAddress, setEmailAddress] = useState("");
-  const [password, setPassword] = useState("");
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
-  const handleLogin = async () => {
+  const handleEmailFocus = () => setEmailFocused(true);
+  const handleEmailBlur = () => setEmailFocused(false);
+
+  const handlePasswordFocus = () => setPasswordFocused(true);
+  const handlePasswordBlur = () => setPasswordFocused(false);
+
+  useWarmUpBrowser();
+  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+
+  const onPress = React.useCallback(async () => {
     try {
-      const response = await axios.post("admin/adminLogin", {
-        emailAddress,
-        password,
-      });
+      const { createdSessionId, signIn, signUp, setActive } =
+        await startOAuthFlow();
 
-      // Assuming your backend returns a token upon successful login
-      const { token } = response.data;
-
-      // Do something with the token, like storing it in AsyncStorage or Redux
-      // For now, you can just log it
-      console.log("Token:", token);
-
-      // Optionally, navigate to another screen upon successful login
-      // navigation.navigate("Home");
-    } catch (error) {
-      console.error("Login Error:", error.response.data.message);
-      Alert.alert("Error", error.response.data.message);
+      if (createdSessionId) {
+        setActive({ session: createdSessionId });
+      } else {
+        // Use signIn or signUp for next steps such as MFA
+      }
+    } catch (err) {
+      console.error("OAuth error", err);
     }
-  };
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.heading}>Login</Text>
-        <TextInput
-          style={styles.input}
-          value={emailAddress}
-          placeholder="Enter Email"
-          onChangeText={(text) => setEmailAddress(text)}
-        />
-        <TextInput
-          style={styles.input}
-          value={password}
-          placeholder="Enter Password"
-          onChangeText={(text) => setPassword(text)}
-          secureTextEntry={true} // Hide password characters
-        />
-        <TouchableOpacity style={styles.btn} onPress={handleLogin}>
-          <Text style={styles.btnText}>Login</Text>
-        </TouchableOpacity>
+    <SafeAreaView>
+      <View className="p-5">
+        <View name="logo">
+          {/* <Image source={{}} /> */}
+          <Text>LOGO</Text>
+        </View>
+        <View
+          name="header-container"
+          className="justify-start items-start pt-5 px-auto pb-auto"
+        >
+          <Text className="text-xl font-bold tracking-widest">
+            Welcome User!
+          </Text>
+          <Text className="text-lg pt-4">Sign In To Continue</Text>
+        </View>
+        <View className="mt-16">
+          <View
+            className="flex-row border-b "
+            style={{ borderBottomColor: emailFocused ? "black" : "#e0e0e0" }}
+          >
+            <Zocial name="email" size={24} style={{ color: "#e0e0e0" }} />
+            <TextInput
+              name="emailAddress"
+              placeholder="Email"
+              className="w-full px-2 py-2 "
+              keyboardType="email-address"
+              onFocus={handleEmailFocus}
+              onBlur={handleEmailBlur}
+            />
+          </View>
+          <View
+            className="flex-row border-b mt-5"
+            style={{ borderBottomColor: passwordFocused ? "black" : "#e0e0e0" }}
+          >
+            <AntDesign name="lock" size={24} style={{ color: "#e0e0e0" }} />
+            <TextInput
+              name="password"
+              placeholder="Password"
+              autoCorrect={false}
+              secureTextEntry
+              className="w-full px-2 py-2 "
+              keyboardType="visible-password"
+              onFocus={handlePasswordFocus}
+              onBlur={handlePasswordBlur}
+            />
+          </View>
+          <Pressable className="justify-end items-end">
+            <Text className="text-sm text-gray-400 pt-2">Forgot Password?</Text>
+          </Pressable>
+
+          <TouchableOpacity className=" justify-center items-center bg-black mt-16 py-3 px-2 rounded">
+            <Text className="text-white text-center text-[16px]">Login</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View name="divider" className="flex-row items-center pt-10 mt-10">
+          <View className="flex-1 h-[1px] border-t border-gray-400"></View>
+          <View>
+            <Text className="w-[50] text-center text-gray-400">or</Text>
+          </View>
+          <View className="flex-1 h-[1px] border-t border-gray-400"></View>
+        </View>
+        <View className="mt-16">
+          <View name="google-auth">
+            <TouchableOpacity onPress={onPress} className="p-4">
+              <Text className="text-center tracking-wide">
+                Continue with Google
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View name="facebook-auth">
+            <TouchableOpacity className="p-4">
+              <Text className="text-center tracking wide">
+                Continue with Facebook
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View name="continue-without">
+            <Text className="text-center text-gray-500 underline tracking-widest">
+              Continue without an account
+            </Text>
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  input: {
-    width: "100%",
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 10,
-    paddingHorizontal: 10,
-  },
-  btn: {
-    backgroundColor: "blue",
-    width: "100%",
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 5,
-  },
-  btnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});

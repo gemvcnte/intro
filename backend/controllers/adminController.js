@@ -31,49 +31,49 @@ const adminController = {
   createAdminUser: async (req, res) => {
     try {
       const adminData = req.body;
-      const existingAdmin = await User.findOne({ emailAddress });
-
+      const existingAdmin = await User.findOne({ emailAddress: adminData.emailAddress });
+  
       if (existingAdmin) {
-        return res
-          .status(400)
-          .json({ message: "Admin with this email already exists" });
+        return res.status(400).json({ message: "Admin with this email already exists" });
       }
-
+  
       const hashedPassword = await argon2.hash(adminData.password);
-
+  
       const newAdmin = new User({
         ...adminData,
         password: hashedPassword,
         role: "admin",
       });
-
+  
       await newAdmin.save();
-
+  
       res.status(201).json(newAdmin);
     } catch (error) {
-      console.error(error);
-      res.status(500).send("Internal server error. Please try again later.");
+      return res.status(500).json({message: `${error}`});
+      console.error(error)
     }
   },
+  
 
   deleteAdminUser: async (req, res) => {
     try {
+      const { emailAddress } = req.body; // Assuming emailAddress is present in the request body
       const admin = await User.findOneAndDelete({
-        emailAddress,
+        "emailAddress.type": emailAddress,
         role: "admin",
       });
-
+  
       if (!admin) {
         return res.status(404).json({ message: "Admin not found" });
       }
-
-      await admin.save();
+  
+      res.status(200).json({ message: "Admin deleted successfully." });
     } catch (err) {
       console.error(err);
-      res.status(500).send("Internal server error. Please try again later.");
+      res.status(500).json({ error: "Internal server error. Please try again later." });
     }
   },
-
+  
   adminLogin: async (req, res) => {
     try {
       const { emailAddress, password } = req.body;

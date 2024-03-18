@@ -1,18 +1,18 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 dotenv.config();
-const client = require("./db/client");
+const connectDb = require("./db/database");
 const app = express();
 const port = process.env.PORT;
 
-app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+connectDb();
 
-const adminRoute = require("./routes/adminroutes");
-app.use('/admin',adminRoute);
+app.use(express.json());
+app.use(cors());
+
+const adminRoute = require("./routes/adminRoutes");
+app.use("/admin", adminRoute);
 
 app.listen(port, async () => {
-  await client.connect();
-  console.log(`Backend is listening to port ${port}`);
+  console.log(`Server is listening to port ${port}`);
 });
